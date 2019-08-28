@@ -249,7 +249,17 @@ public class S3Sink extends AbstractSink implements Configurable, BatchSizeSuppo
                     // AWS写数据
                     try {
                         if(as3w.putFile(this.bucketName, this.filePrefix, this.fileSufix, this.tempFile,this.s3WriterBean)){
+                            //关闭文件句柄
+                            if(fileOutputStream!=null){
+                                try {
+                                    fileOutputStream.close();
+                                    logger.info("关闭文件句柄成功 {}:", this.tempFile);
+                                } catch (IOException e) {
+                                    logger.info("关闭文件句柄失败 {}:", this.tempFile);
+                                }
+                            }
                             currentTempFile.delete();
+                            logger.info("删除文件成功 {}:", this.tempFile);
                             currentTempFile = new File(tempFile);
                             currentTempFile.createNewFile();
                             fileOutputStream = new FileOutputStream(currentTempFile);
@@ -340,10 +350,17 @@ public class S3Sink extends AbstractSink implements Configurable, BatchSizeSuppo
                     long success_count = sinkCounter.getEventDrainSuccessCount();
                     //当时间戳为每小时最后一秒最后10毫秒的时候
                     //设置一个标注说明每小时最后时刻滚动过没有，如果为true表示滚动过，接下来的消息进来就不再滚动，为false表示没滚动过，满足条件滚动
-                    if(!("59").equals(s3WriterBean.getMinute())&&!("59").equals(s3WriterBean.getSecond())&&!s3WriterBean.getMillions().startsWith("9")){
+//                    if(!("59").equals(s3WriterBean.getMinute())&&!("59").equals(s3WriterBean.getSecond())&&!s3WriterBean.getMillions().startsWith("9")){
+//                        isTimeDeadlineRotate=false;
+//                    }
+//                    if(("59").equals(s3WriterBean.getMinute())&&("59").equals(s3WriterBean.getSecond())&&s3WriterBean.getMillions().startsWith("9")&&!isTimeDeadlineRotate){
+//                        shouldRotate=true;
+//                        isTimeDeadlineRotate=true;
+//                    }
+                    if(!("59").equals(s3WriterBean.getMinute())&&!("59").equals(s3WriterBean.getSecond())){
                         isTimeDeadlineRotate=false;
                     }
-                    if(("59").equals(s3WriterBean.getMinute())&&("59").equals(s3WriterBean.getSecond())&&s3WriterBean.getMillions().startsWith("9")&&!isTimeDeadlineRotate){
+                    if(("59").equals(s3WriterBean.getMinute())&&("59").equals(s3WriterBean.getSecond())&&!isTimeDeadlineRotate){
                         shouldRotate=true;
                         isTimeDeadlineRotate=true;
                     }
